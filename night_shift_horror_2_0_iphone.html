@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>НОЧНАЯ СМЕНА 2.0 — SURVIVAL HORROR</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030407;color:#eef1f7;font-family:system-ui,-apple-system,Arial,sans-serif;touch-action:none}
+#game{width:100vw;height:100vh;display:block}
+#hud{position:fixed;top:env(safe-area-inset-top,10px);left:10px;right:10px;display:flex;justify-content:space-between;gap:7px;pointer-events:none;z-index:3}
+.pill{background:#080b12c9;border:1px solid #626b7c77;box-shadow:0 4px 20px #0008;border-radius:11px;padding:8px 10px;font-size:12px;font-weight:750;backdrop-filter:blur(8px)}
+#objective{color:#b9c7d9}
+#hint{position:fixed;top:76px;left:10%;right:10%;text-align:center;font-size:clamp(15px,4vw,22px);font-weight:900;letter-spacing:1px;text-shadow:0 3px 15px #000;pointer-events:none;z-index:2}
+#controls{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:0;right:0;display:flex;justify-content:space-between;align-items:end;padding:0 18px;z-index:4;pointer-events:none}
+.pad{display:none}
+.btn{border:1px solid #8b98ab66;background:linear-gradient(145deg,#30394bd9,#111722e8);color:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;box-shadow:0 5px 16px #0008;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.btn:active{background:#59667c;transform:scale(.96)}.empty{visibility:hidden}
+.actions{display:flex;flex-direction:row;gap:8px;pointer-events:auto;margin-left:auto}.action{width:66px;height:54px;font-size:11px;line-height:1.2;display:flex;flex-direction:column;gap:3px}
+#lookArea{position:fixed;top:0;right:0;width:52%;height:100%;z-index:1;touch-action:none;pointer-events:auto}
+#stickZone{position:fixed;left:0;bottom:0;width:48%;height:58%;z-index:4;touch-action:none;pointer-events:auto}
+#stickBase{position:absolute;left:24px;bottom:24px;width:116px;height:116px;border:2px solid #b5c4d866;background:#11172266;border-radius:50%;box-shadow:0 0 28px #0008;display:flex;align-items:center;justify-content:center}
+#stickKnob{width:52px;height:52px;border:2px solid #d9e3f0aa;background:linear-gradient(145deg,#536176dd,#202938ee);border-radius:50%;box-shadow:0 4px 16px #0008;transform:translate(0,0)}
+#rotateNotice{display:none;position:fixed;inset:0;z-index:20;background:#05070df5;align-items:center;justify-content:center;text-align:center;padding:28px;font-size:22px;font-weight:900}
+@media(orientation:portrait) and (max-width:700px){#rotateNotice{display:flex}}
+#overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 35%,#202735d9,#030407f5 75%);display:flex;align-items:center;justify-content:center;padding:22px;z-index:10;text-align:center}
+.panel{width:min(440px,100%);padding:26px 22px;border:1px solid #6e7a8d55;border-radius:22px;background:linear-gradient(145deg,#171d28f5,#07090ef7);box-shadow:0 30px 100px #000c}
+.kicker{font-size:10px;letter-spacing:4px;color:#d34b59;font-weight:900}
+h1{font-size:clamp(34px,10vw,55px);line-height:.92;letter-spacing:2px;margin:12px 0 16px;text-shadow:0 0 26px #e52d4933}
+h1 span{color:#e34758}.desc{color:#c0c9d8;font-size:14px;line-height:1.6}.start{margin-top:12px;width:100%;padding:15px 20px;border:1px solid #ff7180;background:linear-gradient(135deg,#b5293c,#5d1020);color:#fff;border-radius:13px;font-size:15px;font-weight:900;letter-spacing:1px;box-shadow:0 8px 24px #9d162d44}
+.tiny{color:#778397;font-size:11px;margin-top:14px}.hidden{display:none!important}
+#staminaWrap{position:fixed;left:14px;top:54px;width:130px;height:15px;border:1px solid #9ba9ba66;border-radius:5px;background:#05070ab8;z-index:3;overflow:hidden;pointer-events:none}
+#staminaFill{height:100%;width:100%;background:linear-gradient(90deg,#5f9b82,#d1dca0);transition:width .12s}
+#staminaWrap span{position:absolute;inset:0;text-align:center;font-size:8px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 1px 3px #000}
+#soundToggle{position:fixed;right:12px;top:55px;z-index:5;border:1px solid #8b98ab66;border-radius:9px;background:#080b12c9;color:#fff;padding:7px 10px;font-weight:800;font-size:11px}
+
+#jumpscare{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;flex-direction:column;background:#020104;overflow:hidden}
+#jumpscare.show{display:flex;animation:scareflash .13s steps(2,end) infinite}
+.scare-face{width:min(78vw,560px);height:min(85vh,560px);position:relative;border-radius:48% 48% 42% 42%;background:radial-gradient(ellipse at 50% 35%,#b7b4b1 0,#555052 18%,#171318 48%,#020103 72%);filter:contrast(1.45);box-shadow:0 0 90px #8b001b}
+.eyes{position:absolute;top:34%;left:14%;right:14%;display:flex;justify-content:space-between}
+.eyes i{display:block;width:25%;height:clamp(20px,7vw,54px);background:#f9e8d0;border-radius:50%;box-shadow:0 0 24px 12px #ff1b35;transform:rotate(-12deg)}
+.eyes i:last-child{transform:rotate(12deg)}
+.mouth{position:absolute;left:31%;top:55%;width:38%;height:30%;border-radius:50% 50% 45% 45%;background:repeating-linear-gradient(180deg,#080307 0 10px,#d9c7c3 11px 15px);box-shadow:0 0 28px #000;transform:scaleY(1.15)}
+.scare-label{position:absolute;bottom:7%;font-size:clamp(20px,5vw,38px);font-weight:1000;letter-spacing:5px;color:#ff263e;text-shadow:0 0 20px #ff001e}
+@keyframes scareflash{0%{transform:translate(0,0);filter:brightness(1)}25%{transform:translate(7px,-4px);filter:brightness(1.7)}50%{transform:translate(-5px,3px);filter:brightness(.7)}75%{transform:translate(3px,5px);filter:brightness(1.3)}}
+@media(min-width:650px){.pad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,56px)}.action{width:76px;height:58px}}
+</style></head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud"><div class="pill" id="keys">🔑 КЛЮЧИ 0/3</div><div class="pill" id="objective">НАЙДИ КЛЮЧИ</div><div class="pill" id="clock">23:47</div></div><div id="staminaWrap"><div id="staminaFill"></div><span>ВЫНОСЛИВОСТЬ</span></div>
+<div id="hint"></div><button id="soundToggle" type="button">🔊 ЗВУК: ВКЛ</button><div id="jumpscare" aria-hidden="true"><div class="scare-face"><div class="eyes"><i></i><i></i></div><div class="mouth"></div></div><div class="scare-label">ОН НАШЁЛ ТЕБЯ</div></div>
+<div id="lookArea" aria-label="Поворачивать камеру"></div>
+<div id="stickZone" aria-label="Джойстик движения"><div id="stickBase"><div id="stickKnob"></div></div></div>
+<div id="controls">
+ <div class="pad"><div class="btn empty"></div><div class="btn" data-move="forward">▲</div><div class="btn empty"></div><div class="btn" data-move="left">◀</div><div class="btn" data-move="back">▼</div><div class="btn" data-move="right">▶</div></div>
+ <div class="actions"><div class="btn action" id="light">🔦<span>ФОНАРИК</span></div><div class="btn action" id="run">⚡<span>БЕГ</span></div></div>
+</div>
+<div id="overlay"><div class="panel"><div class="kicker">SURVIVAL HORROR • ВЕРСИЯ 2.0</div><h1>НОЧНАЯ<br><span>СМЕНА</span></h1><p class="desc">Заброшенная больница. Аварийное освещение мигает, в темноте слышны шаги. Он уже знает, что ты здесь.</p><p class="desc"><b>Найди 3 ключа и открой выход.</b><br>Левая рука — движение. Правая — осмотр по сторонам. Не позволяй Ему приблизиться.</p><button class="start" id="start">ВОЙТИ В БОЛЬНИЦУ</button><div class="tiny">ВЕРСИЯ 2.0 • Поверни iPhone горизонтально • слева — движение • справа — обзор</div></div></div>
+<script>
+(()=>{
+const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,1.6);W=innerWidth;H=innerHeight;canvas.width=Math.floor(W*dpr);canvas.height=Math.floor(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const map=[
+"################",
+"#P.....#......E#",
+"#.###..#.####..#",
+"#...#..#....#..#",
+"###.#.####..#..#",
+"#...#......##..#",
+"#.########.....#",
+"#......K...##..#",
+"#.#######..##..#",
+"#.....#....K...#",
+"#.##..#.######.#",
+"#..K..#........#",
+"#.....########.#",
+"#..............#",
+"################"
+];
+const MW=map[0].length,MH=map.length;
+let grid=[],keys=[],player={x:1.5,y:1.5,a:0,running:false},monster={x:13.4,y:10.8,active:false},exit={x:14.5,y:1.5};
+let held={},got=0,light=true,run=false,playing=false,over=false,won=false,last=0,t=0,scare=0,flash=0,toast='',toastUntil=0,stamina=100,monsterSpeed=.48;
+let stickPointer=null,lookPointer=null,lookX=0,stickDX=0,stickDY=0;
+ let audioCtx=null,lastScareAt=-99,scareTimer=null,ambientOsc=null,ambientGain=null,soundOn=true,shake=0,nextHauntAt=10;
+ function audioReady(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}catch(e){return null;}}
+ function startAmbience(){const ac=audioReady();if(!ac||ambientOsc||!soundOn)return;try{ambientOsc=ac.createOscillator();ambientGain=ac.createGain();const filter=ac.createBiquadFilter();filter.type='lowpass';filter.frequency.value=180;ambientOsc.type='triangle';ambientOsc.frequency.value=43;ambientGain.gain.value=.045;ambientOsc.connect(filter);filter.connect(ambientGain);ambientGain.connect(ac.destination);ambientOsc.start();}catch(e){}}
+ function stopAmbience(){try{if(ambientOsc){ambientOsc.stop();ambientOsc.disconnect();}if(ambientGain)ambientGain.disconnect();}catch(e){}ambientOsc=null;ambientGain=null;}
+ function sting(){const ac=audioReady();if(!ac||!soundOn)return;try{const now=ac.currentTime;const o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();o.type='sawtooth';o.frequency.setValueAtTime(980,now);o.frequency.exponentialRampToValueAtTime(58,now+.72);f.type='lowpass';f.frequency.value=2200;g.gain.setValueAtTime(.001,now);g.gain.exponentialRampToValueAtTime(.48,now+.025);g.gain.exponentialRampToValueAtTime(.001,now+.9);o.connect(f);f.connect(g);g.connect(ac.destination);o.start(now);o.stop(now+.92);const n=ac.createOscillator(),ng=ac.createGain();n.type='square';n.frequency.setValueAtTime(53,now);ng.gain.setValueAtTime(.001,now);ng.gain.linearRampToValueAtTime(.22,now+.04);ng.gain.exponentialRampToValueAtTime(.001,now+.75);n.connect(ng);ng.connect(ac.destination);n.start(now);n.stop(now+.76);}catch(e){}}
+ function jumpScare(){const el=document.querySelector('#jumpscare');el.classList.add('show');shake=1;sting();clearTimeout(scareTimer);scareTimer=setTimeout(()=>el.classList.remove('show'),900);}
+
+const FOV=Math.PI*.38;
+function init(){try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock("landscape").catch(()=>{});}catch(e){}grid=map.map(r=>r.split(''));keys=[];got=0;t=0;lastScareAt=-99;nextHauntAt=8+Math.random()*8;shake=0;clearTimeout(scareTimer);document.querySelector('#jumpscare').classList.remove('show');stamina=100;light=true;run=false;over=false;won=false;playing=true;flash=0;toast='';startAmbience();player={x:1.5,y:1.5,a:0};monster={x:13.4,y:10.8,active:false};for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){if(grid[y][x]==='P')grid[y][x]='.';if(grid[y][x]==='K'){keys.push({x:x+.5,y:y+.5,taken:false});grid[y][x]='.'}if(grid[y][x]==='E'){exit={x:x+.5,y:y+.5};grid[y][x]='.'}}document.querySelector('#overlay').classList.add('hidden');document.querySelector('#hint').textContent='';last=performance.now();requestAnimationFrame(loop)}
+function wall(x,y){x=Math.floor(x);y=Math.floor(y);return x<0||y<0||x>=MW||y>=MH||grid[y][x]==='#'}
+function move(x,y){if(!wall(x+.18,y)&&!wall(x-.18,y))player.x=x;if(!wall(player.x,y+.18)&&!wall(player.x,y-.18))player.y=y}
+function norm(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a}
+function ray(angle){let s=Math.sin(angle),c=Math.cos(angle);for(let d=.025;d<20;d+=.025){let x=player.x+c*d,y=player.y+s*d;if(wall(x,y)){let fx=x-Math.floor(x),fy=y-Math.floor(y);return {d,x,y,side:(Math.min(fx,1-fx)<Math.min(fy,1-fy))?'x':'y',fx,fy}}}return {d:20,x:player.x,y:player.y,side:'x',fx:0,fy:0}}
+function render(){
+ const shakeX=shake>0?(Math.random()-.5)*14*shake:0,shakeY=shake>0?(Math.random()-.5)*10*shake:0;
+ ctx.save();ctx.translate(shakeX,shakeY);
+ const horizon=H*.49;
+ let sky=ctx.createLinearGradient(0,0,0,horizon);sky.addColorStop(0,'#03050a');sky.addColorStop(1,'#242b35');ctx.fillStyle=sky;ctx.fillRect(0,0,W,horizon);
+ let floor=ctx.createLinearGradient(0,horizon,0,H);floor.addColorStop(0,'#27282d');floor.addColorStop(1,'#07080c');ctx.fillStyle=floor;ctx.fillRect(0,horizon,W,H-horizon);
+ // distant ceiling lights
+ for(let i=0;i<6;i++){let a=norm((i/5-.5)*FOV);let x=W/2+Math.tan(a)*W*.7;ctx.fillStyle=`rgba(170,190,215,${.04+(.03*Math.sin(t*2+i))})`;ctx.fillRect(x-20,horizon*.22,40,5)}
+ const cols=Math.ceil(W/2),zbuf=new Float32Array(cols);
+ for(let i=0;i<cols;i++){
+  let cam=(i/cols-.5)*FOV,ang=player.a+cam,r=ray(ang),dist=r.d*Math.cos(cam);zbuf[i]=dist;
+  let wh=Math.min(H*1.8,H/(dist*.76)),top=horizon-wh/2;
+  let edge=(r.side==='x'?Math.abs(r.y-Math.floor(r.y)):Math.abs(r.x-Math.floor(r.x)));
+  let texture=Math.floor((r.side==='x'?r.y:r.x)*8)%2;
+  let lum=Math.max(.08,1-dist/10)*(r.side==='x'?.78:1)*(texture?.86:1);
+  let rr=Math.floor((r.side==='x'?57:72)*lum),gg=Math.floor((r.side==='x'?67:78)*lum),bb=Math.floor((r.side==='x'?79:89)*lum);
+  ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fillRect(i*W/cols,top,W/cols+1,wh);
+  // wall seams, cracked grunge
+  if(Math.floor((r.side==='x'?r.y:r.x)*2)%3===0){ctx.fillStyle=`rgba(5,7,11,${.12+dist*.025})`;ctx.fillRect(i*W/cols,top,W/cols+1,wh)}
+  let seam=(r.side==='x'?r.x-Math.floor(r.x):r.y-Math.floor(r.y));
+  if(seam<.035||seam>.965){ctx.fillStyle='#090b10';ctx.fillRect(i*W/cols,top,W/cols+1,wh)}
+  // blood streaks on some surfaces
+  if((Math.floor(r.x*3)+Math.floor(r.y*4))%13===0){ctx.fillStyle=`rgba(105,13,28,${Math.max(0,.24-dist*.018)})`;ctx.fillRect(i*W/cols,top+wh*.6,W/cols+1,wh*.14)}
+  // damp plaster, tile seams and rust trails
+  if((Math.floor(r.x*5)+Math.floor(r.y*7))%9===0){ctx.fillStyle=`rgba(7,10,13,${Math.max(0,.18-dist*.012)})`;ctx.fillRect(i*W/cols,top+wh*.12,W/cols+1,wh*.48)}
+  if((Math.floor(r.x*2)+Math.floor(r.y*2))%4===0){ctx.fillStyle=`rgba(155,163,166,${Math.max(0,.10-dist*.008)})`;ctx.fillRect(i*W/cols,top+wh*.32,W/cols+1,Math.max(1,wh*.008))}
+  if((Math.floor(r.x*3)+Math.floor(r.y*4))%17===0){ctx.fillStyle=`rgba(92,8,21,${Math.max(0,.28-dist*.02)})`;ctx.fillRect(i*W/cols,top+wh*.42,W/cols+1,wh*.22)}
+  // wall lower trim
+  ctx.fillStyle=`rgba(4,6,9,${.25+Math.max(0,1-dist/9)*.25})`;ctx.fillRect(i*W/cols,top+wh*.86,W/cols+1,wh*.14)
+ }
+ // sprite renderer depth sorted
+ let sprites=[];
+ for(const k of keys)if(!k.taken)sprites.push({x:k.x,y:k.y,type:'key'});
+ sprites.push({x:exit.x,y:exit.y,type:'exit'});
+ if(monster.active)sprites.push({x:monster.x,y:monster.y,type:'monster'});
+ sprites.sort((a,b)=>Math.hypot(b.x-player.x,b.y-player.y)-Math.hypot(a.x-player.x,a.y-player.y));
+ for(const s of sprites){
+  let dx=s.x-player.x,dy=s.y-player.y,dist=Math.hypot(dx,dy),ang=norm(Math.atan2(dy,dx)-player.a);
+  if(Math.abs(ang)>FOV*.7||dist<.12)continue;
+  let sx=W/2+(ang/FOV)*W, size=Math.min(H*1.5,H/(dist*.78));
+  let col=Math.floor(sx/W*cols);if(col>=0&&col<cols&&dist>zbuf[col]*1.12)continue;
+  let alpha=Math.max(.25,1-dist/12);ctx.save();ctx.globalAlpha=alpha;
+  if(s.type==='key'){
+   let y=horizon+size*.18;ctx.shadowColor='#ffd85a';ctx.shadowBlur=20;ctx.strokeStyle='#ffda68';ctx.lineWidth=Math.max(2,size*.045);ctx.beginPath();ctx.arc(sx-size*.08,y,size*.10,0,Math.PI*2);ctx.moveTo(sx,y);ctx.lineTo(sx+size*.18,y);ctx.lineTo(sx+size*.18,y+size*.09);ctx.stroke();ctx.shadowBlur=0;
+  }else if(s.type==='exit'){
+   let h=size*.9,w=h*.48,top=horizon-h*.5;ctx.fillStyle=got===3?'#147b58':'#51212c';ctx.fillRect(sx-w/2,top,w,h);ctx.strokeStyle=got===3?'#63ffc0':'#a44756';ctx.lineWidth=3;ctx.strokeRect(sx-w/2,top,w,h);ctx.fillStyle='#d7e4eb';ctx.fillRect(sx+w*.25,top+h*.5,3,3);
+  }else{
+   let h=size*1.15,w=h*.55,top=horizon-h*.5;
+   ctx.shadowColor='#a00024';ctx.shadowBlur=30;ctx.fillStyle='#050609';ctx.beginPath();ctx.ellipse(sx,top+h*.55,w*.42,h*.45,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+   ctx.fillStyle='#d71937';ctx.fillRect(sx-w*.2,top+h*.22,w*.12,h*.035);ctx.fillRect(sx+w*.08,top+h*.22,w*.12,h*.035);
+   ctx.strokeStyle='#8c1528';ctx.lineWidth=Math.max(2,h*.018);ctx.beginPath();ctx.moveTo(sx-w*.13,top+h*.43);ctx.lineTo(sx+w*.13,top+h*.43);ctx.stroke();
+  }ctx.restore();
+ }
+ // flashlight cone + vignette
+ let darkness=light?.22:.76;
+ let g=ctx.createRadialGradient(W/2,H*.49,10,W/2,H*.49,Math.max(W,H)*.72);g.addColorStop(0,`rgba(0,0,0,${darkness})`);g.addColorStop(.55,`rgba(0,0,0,${darkness+.17})`);g.addColorStop(1,'rgba(0,0,0,.94)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // film grain specks
+ for(let i=0;i<45;i++){let x=(i*173+t*7)%W,y=(i*97+t*13)%H;ctx.fillStyle=`rgba(220,230,240,${.025+((i%3)*.012)})`;ctx.fillRect(x,y,1.2,1.2)}
+ // player hands / flashlight silhouette
+ ctx.fillStyle='#11151d';ctx.beginPath();ctx.moveTo(W*.42,H);ctx.lineTo(W*.46,H*.89);ctx.lineTo(W*.54,H*.89);ctx.lineTo(W*.61,H);ctx.fill();
+ ctx.fillStyle='#313a48';ctx.fillRect(W*.49,H*.88,W*.055,H*.09);ctx.fillStyle='#b8c7d7';ctx.fillRect(W*.5,H*.875,W*.035,H*.015);
+ if(scare>0){ctx.fillStyle=`rgba(155,0,22,${scare*.6})`;ctx.fillRect(0,0,W,H)}
+ // crosshair
+ ctx.strokeStyle='#e2e8f099';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(W/2-5,H*.49);ctx.lineTo(W/2+5,H*.49);ctx.moveTo(W/2,H*.49-5);ctx.lineTo(W/2,H*.49+5);ctx.stroke();
+}
+function update(dt){
+ t+=dt;
+ let forward=(held.forward?1:0)-(held.back?1:0),turn=(held.right?1:0)-(held.left?1:0);
+  forward += -(stickDY||0); const strafe=(stickDX||0);
+ player.a=norm(player.a+turn*dt*1.85);
+ let speed=run&&stamina>0?2.45:1.45;
+ if(run&&forward&&stamina>0)stamina=Math.max(0,stamina-dt*28);else stamina=Math.min(100,stamina+dt*13);
+ if(forward||strafe){move(player.x+(Math.cos(player.a)*forward-Math.sin(player.a)*strafe)*speed*dt,player.y+(Math.sin(player.a)*forward+Math.cos(player.a)*strafe)*speed*dt)}
+ for(let k of keys)if(!k.taken&&Math.hypot(player.x-k.x,player.y-k.y)<.48){k.taken=true;got++;monster.active=true;monsterSpeed=.45+got*.12;flash=.25;toast=got===3?'ВСЕ КЛЮЧИ НАЙДЕНЫ. БЕГИ!':'ТЫ ЧТО-ТО РАЗБУДИЛ…';toastUntil=t+2.5;document.querySelector('#keys').textContent=`🔑 КЛЮЧИ ${got}/3`}
+ let md=Math.hypot(player.x-monster.x,player.y-monster.y);
+ if(monster.active&&md>.38){let a=Math.atan2(player.y-monster.y,player.x-monster.x),step=monsterSpeed*dt;if(!wall(monster.x+Math.cos(a)*step,monster.y))monster.x+=Math.cos(a)*step;if(!wall(monster.x,monster.y+Math.sin(a)*step))monster.y+=Math.sin(a)*step}
+ md=Math.hypot(player.x-monster.x,player.y-monster.y);scare=md<4?Math.max(0,(4-md)/4):0;
+  if(monster.active&&md<2.7&&t-lastScareAt>7){lastScareAt=t;jumpScare();flash=.5;}
+
+ if(md<.42){finish(false);return}
+ if(Math.hypot(player.x-exit.x,player.y-exit.y)<.55){if(got===3){finish(true);return}else{toast='ВЫХОД ЗАПЕРТ — НУЖНЫ 3 КЛЮЧА';toastUntil=t+2}}
+ document.querySelector('#objective').textContent=got===3?'БЕГИ К ВЫХОДУ':(scare>.5?'ОН СОВСЕМ РЯДОМ':'НАЙДИ КЛЮЧИ');
+ document.querySelector('#clock').textContent='23:'+String(47+Math.floor(t*1.2)%13).padStart(2,'0');
+ document.querySelector('#hint').textContent=t<toastUntil?toast:'';
+}
+function finish(v){playing=false;over=true;won=v;stopAmbience();document.querySelector('#overlay').classList.remove('hidden');document.querySelector('#overlay .panel').innerHTML=`<div class="kicker">${v?'ТЫ ВЫЖИЛ':'КОНЕЦ СМЕНЫ'}</div><h1>${v?'ТЫ <span>ВЫБРАЛСЯ</span>':'ОН <span>ПОЙМАЛ ТЕБЯ</span>'}</h1><p class="desc">${v?'Ты открыл выход и выбрался из больницы… но за дверью кто-то уже ждёт.':'Фонарик погас. В темноте ты слышишь тяжёлое дыхание прямо у уха.'}</p><button class="start" id="again"> ${v?'ПРОЙТИ ЕЩЁ РАЗ':'ПОПРОБОВАТЬ СНОВА'} </button><div class="tiny">Ночная смена ещё не закончена…</div>`;document.querySelector('#again').onclick=init}
+function loop(now){if(!playing)return;let dt=Math.min(.04,(now-last)/1000||0);last=now;update(dt);render();requestAnimationFrame(loop)}
+function bind(el,key){let on=e=>{e.preventDefault();held[key]=true},off=e=>{e.preventDefault();held[key]=false};el.addEventListener('pointerdown',on);['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,off))}
+const stickZone=document.querySelector('#stickZone'),stickBase=document.querySelector('#stickBase'),stickKnob=document.querySelector('#stickKnob');
+function resetStick(){stickPointer=null;stickDX=0;stickDY=0;stickKnob.style.transform='translate(0px,0px)'}
+stickZone.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;stickZone.setPointerCapture?.(e.pointerId);updateStick(e)});
+stickZone.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer){e.preventDefault();updateStick(e)}});
+function updateStick(e){const r=stickBase.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(e.clientX-cx)/(r.width*.38),dy=(e.clientY-cy)/(r.height*.38);const m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}stickDX=dx;stickDY=dy;stickKnob.style.transform=`translate(${dx*32}px,${dy*32}px)`}
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>stickZone.addEventListener(ev,e=>{if(e.pointerId===stickPointer)resetStick()}));
+const lookArea=document.querySelector('#lookArea');
+lookArea.addEventListener('pointerdown',e=>{e.preventDefault();lookPointer=e.pointerId;lookX=e.clientX;lookArea.setPointerCapture?.(e.pointerId)});
+lookArea.addEventListener('pointermove',e=>{if(e.pointerId===lookPointer){e.preventDefault();const dx=e.clientX-lookX;lookX=e.clientX;player.a=norm(player.a+dx*.0085)}});
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>lookArea.addEventListener(ev,e=>{if(e.pointerId===lookPointer)lookPointer=null}));
+document.querySelector('#light').addEventListener('pointerdown',e=>{e.preventDefault();light=!light});
+document.querySelector('#run').addEventListener('pointerdown',e=>{e.preventDefault();run=true});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>document.querySelector('#run').addEventListener(ev,()=>run=false));
+document.querySelector('#start').onclick=()=>{startAmbience();init();};
+document.querySelector('#soundToggle').addEventListener('click',()=>{soundOn=!soundOn;document.querySelector('#soundToggle').textContent=soundOn?'🔊 ЗВУК: ВКЛ':'🔇 ЗВУК: ВЫКЛ';if(soundOn){startAmbience();}else{stopAmbience();}});
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')held.forward=true;if(k==='s'||k==='arrowdown')held.back=true;if(k==='a'||k==='arrowleft')held.left=true;if(k==='d'||k==='arrowright')held.right=true;if(k==='shift')run=true;if(k==='f')light=!light});
+addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')held.forward=false;if(k==='s'||k==='arrowdown')held.back=false;if(k==='a'||k==='arrowleft')held.left=false;if(k==='d'||k==='arrowright')held.right=false;if(k==='shift')run=false});
+render();
+})();
+</script></body></html>
